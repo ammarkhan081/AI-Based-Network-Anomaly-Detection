@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-white rounded-3 shadow-sm p-4">
+                <h2 class="display-6 text-primary mb-3">
+                    <i class="fas fa-cogs me-3"></i>Train Machine Learning Model
+                </h2>
+                <p class="lead text-muted">
+                    Upload your training and testing datasets to train and evaluate machine learning models for network traffic analysis.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Training Form -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-upload me-2"></i>Model Training Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/train" enctype="multipart/form-data" id="trainingForm">
+                        <div class="row">
+                            <!-- Training CSV Upload -->
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-database me-2 text-success"></i>Training Dataset
+                                </label>
+                                <div class="input-group">
+                                    <input type="file" name="train_csv" class="form-control" accept=".csv" required>
+                                    <span class="input-group-text">
+                                        <i class="fas fa-file-csv text-success"></i>
+                                    </span>
+                                </div>
+                                <div class="form-text">Upload your training CSV file (with 'label' column)</div>
+                            </div>
+
+                            <!-- Testing CSV Upload -->
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-vial me-2 text-info"></i>Testing Dataset
+                                </label>
+                                <div class="input-group">
+                                    <input type="file" name="test_csv" class="form-control" accept=".csv" required>
+                                    <span class="input-group-text">
+                                        <i class="fas fa-file-csv text-info"></i>
+                                    </span>
+                                </div>
+                                <div class="form-text">Upload your testing CSV file (with 'label' column)</div>
+                            </div>
+                        </div>
+
+                        <!-- Model Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-brain me-2 text-warning"></i>Select Machine Learning Model
+                            </label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <select name="model" class="form-select form-select-lg" required>
+                                        <option value="">Choose a model...</option>
+                                        <option value="rf">🌳 Random Forest</option>
+                                        <option value="lr">📈 Logistic Regression</option>
+                                        <option value="svm">🎯 Support Vector Machine</option>
+                                        <option value="dt">🌲 Decision Tree</option>
+                                        <option value="xgb">🚀 XGBoost</option>
+                                        <option value="lgb">⚡ LightGBM</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-success btn-lg px-5" id="trainBtn">
+                                <i class="fas fa-play me-2"></i>Train & Evaluate Model
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Panel -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Model Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="model-info">
+                        <h6 class="text-primary">Available Models:</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <span class="badge bg-success me-2">RF</span>
+                                <small>Random Forest - Ensemble method</small>
+                            </li>
+                            <li class="mb-2">
+                                <span class="badge bg-primary me-2">LR</span>
+                                <small>Logistic Regression - Linear classifier</small>
+                            </li>
+                            <li class="mb-2">
+                                <span class="badge bg-warning text-dark me-2">SVM</span>
+                                <small>Support Vector Machine</small>
+                            </li>
+                            <li class="mb-2">
+                                <span class="badge bg-info me-2">DT</span>
+                                <small>Decision Tree - Rule-based</small>
+                            </li>
+                            <li class="mb-2">
+                                <span class="badge bg-danger me-2">XGB</span>
+                                <small>XGBoost - Gradient boosting</small>
+                            </li>
+                            <li class="mb-2">
+                                <span class="badge bg-dark me-2">LGB</span>
+                                <small>LightGBM - Fast gradient boosting</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requirements Card -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Dataset Requirements
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            CSV format only
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Must contain 'label' column
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            No missing headers
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Consistent data types
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>Training Model...</h5>
+                <p class="text-muted mb-0">This may take a few moments</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('trainingForm').addEventListener('submit', function(e) {
+    // Show loading modal
+    var loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    // Disable submit button
+    document.getElementById('trainBtn').disabled = true;
+    document.getElementById('trainBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Training...';
+});
+
+// File upload validation
+document.querySelectorAll('input[type="file"]').forEach(function(input) {
+    input.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file && !file.name.toLowerCase().endsWith('.csv')) {
+            alert('Please select a CSV file only.');
+            e.target.value = '';
+        }
+    });
+});
+</script>
+{% endblock %}

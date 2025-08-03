@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-white rounded-3 shadow-sm p-4">
+                <h2 class="display-6 text-primary mb-3">
+                    <i class="fas fa-brain me-3"></i>Make Predictions
+                </h2>
+                <p class="lead text-muted">
+                    Upload new network traffic data to get predictions using your trained machine learning models.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Prediction Form -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-upload me-2"></i>Upload Data for Prediction
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/predict" enctype="multipart/form-data" id="predictionForm">
+                        <!-- File Upload Section -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-file-csv me-2 text-primary"></i>Select CSV File for Prediction
+                            </label>
+                            <div class="upload-area border-2 border-dashed rounded-3 p-4 text-center" id="uploadArea">
+                                <input type="file" name="predict_csv" class="form-control d-none" accept=".csv" required id="csvFile">
+                                <div class="upload-content" id="uploadContent">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">Drag & Drop CSV File Here</h5>
+                                    <p class="text-muted mb-3">or</p>
+                                    <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('csvFile').click()">
+                                        <i class="fas fa-folder-open me-2"></i>Browse Files
+                                    </button>
+                                </div>
+                                <div class="file-info d-none" id="fileInfo">
+                                    <i class="fas fa-file-csv fa-2x text-success mb-2"></i>
+                                    <p class="mb-1 text-success fw-bold" id="fileName"></p>
+                                    <p class="text-muted small" id="fileSize"></p>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile()">
+                                        <i class="fas fa-times me-1"></i>Remove
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Upload a CSV file without the 'label' column. The model will predict the classification for each row.
+                            </div>
+                        </div>
+
+                        <!-- Model Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-cog me-2 text-success"></i>Select Trained Model
+                            </label>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <select name="model" class="form-select form-select-lg" required id="modelSelect">
+                                        <option value="">Choose a trained model...</option>
+                                        <option value="rf" data-desc="Ensemble method with multiple decision trees">🌳 Random Forest</option>
+                                        <option value="lr" data-desc="Linear classification algorithm">📈 Logistic Regression</option>
+                                        <option value="svm" data-desc="Maximum margin classifier">🎯 Support Vector Machine</option>
+                                        <option value="dt" data-desc="Rule-based decision making">🌲 Decision Tree</option>
+                                        <option value="xgb" data-desc="Optimized gradient boosting">🚀 XGBoost</option>
+                                        <option value="lgb" data-desc="Fast gradient boosting framework">⚡ LightGBM</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="model-status-indicator">
+                                        <div class="alert alert-info py-2 px-3 mb-0" id="modelStatus">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <small>Select a model to check status</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text" id="modelDescription">
+                                Select a model to see its description and training status.
+                            </div>
+                        </div>
+
+                        <!-- Prediction Options -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-sliders-h me-2 text-info"></i>Prediction Options
+                            </label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="showProbability" name="show_probability">
+                                        <label class="form-check-label" for="showProbability">
+                                            Include Prediction Probabilities
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="downloadResults" name="download_results" checked>
+                                        <label class="form-check-label" for="downloadResults">
+                                            Download Results as CSV
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-warning btn-lg px-5" id="predictBtn">
+                                <i class="fas fa-magic me-2"></i>Generate Predictions
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information & Status Panel -->
+        <div class="col-lg-4">
+            <!-- Prediction Status -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-tachometer-alt me-2"></i>Prediction Status
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="prediction-stats">
+                        <div class="mb-3">
+                            <strong>Last Prediction:</strong>
+                            <span class="text-muted ms-2">{{ last_prediction if last_prediction else 'None' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Total Predictions Made:</strong>
+                            <span class="badge bg-primary ms-2">{{ total_predictions if total_predictions else '0' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Available Models:</strong>
+                            <span class="badge bg-success ms-2">{{ available_models if available_models else '0' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prediction Guide -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-book me-2"></i>Prediction Guide
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="guide-steps">
+                        <div class="step-item mb-3">
+                            <div class="d-flex">
+                                <span class="badge bg-primary me-3">1</span>
+                                <div>
+                                    <strong>Upload CSV File</strong>
+                                    <p class="small text-muted mb-0">Select a CSV file with the same features as your training data (without labels).</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item mb-3">
+                            <div class="d-flex">
+                                <span class="badge bg-primary me-3">2</span>
+                                <div>
+                                    <strong>Choose Model</strong>
+                                    <p class="small text-muted mb-0">Select a previously trained model for making predictions.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item mb-3">
+                            <div class="d-flex">
+                                <span class="badge bg-primary me-3">3</span>
+                                <div>
+                                    <strong>Configure Options</strong>
+                                    <p class="small text-muted mb-0">Set prediction options like probability scores and output format.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="step-item">
+                            <div class="d-flex">
+                                <span class="badge bg-success me-3">4</span>
+                                <div>
+                                    <strong>Get Results</strong>
+                                    <p class="small text-muted mb-0">Download predictions or view them in the results section.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Format Requirements -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Data Requirements
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Same features as training data
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            No 'label' column required
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            CSV format with headers
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Clean data (no missing values)
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-times text-danger me-2"></i>
+                            Maximum file size: 50MB
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing Modal -->
+<div class="modal fade" id="processingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="spinner-border text-warning mb-3" role="status">
+                    <span class="visually-hidden">Processing...</span>
+                </div>
+                <h5>Processing Predictions...</h5>
+                <p class="text-muted mb-0">Analyzing your data and generating predictions</p>
+                <div class="progress mt-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// File upload handling
+const uploadArea = document.getElementById('uploadArea');
+const csvFile = document.getElementById('csvFile');
+const uploadContent = document.getElementById('uploadContent');
+const fileInfo = document.getElementById('fileInfo');
+const fileName = document.getElementById('fileName');
+const fileSize = document.getElementById('fileSize');
+
+// Drag and drop functionality
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('border-primary');
+});
+
+uploadArea.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('border-primary');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('border-primary');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].name.toLowerCase().endsWith('.csv')) {
+        csvFile.files = files;
+        showFileInfo(files[0]);
+    } else {
+        alert('Please drop a CSV file only.');
+    }
+});
+
+// File input change
+csvFile.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        showFileInfo(e.target.files[0]);
+    }
+});
+
+function showFileInfo(file) {
+    fileName.textContent = file.name;
+    fileSize.textContent = `Size: ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    
+    uploadContent.classList.add('d-none');
+    fileInfo.classList.remove('d-none');
+}
+
+function removeFile() {
+    csvFile.value = '';
+    uploadContent.classList.remove('d-none');
+    fileInfo.classList.add('d-none');
+}
+
+// Model selection handling
+const modelSelect = document.getElementById('modelSelect');
+const modelStatus = document.getElementById('modelStatus');
+const modelDescription = document.getElementById('modelDescription');
+
+modelSelect.addEventListener('change', (e) => {
+    const selectedOption = e.target.selectedOptions[0];
+    
+    if (selectedOption.value) {
+        const description = selectedOption.dataset.desc;
+        modelDescription.textContent = description;
+        
+        // Simulate model status check
+        modelStatus.innerHTML = '<i class="fas fa-check-circle me-1"></i><small>Model Available</small>';
+        modelStatus.className = 'alert alert-success py-2 px-3 mb-0';
+    } else {
+        modelDescription.textContent = 'Select a model to see its description and training status.';
+        modelStatus.innerHTML = '<i class="fas fa-info-circle me-1"></i><small>Select a model to check status</small>';
+        modelStatus.className = 'alert alert-info py-2 px-3 mb-0';
+    }
+});
+
+// Form submission
+document.getElementById('predictionForm').addEventListener('submit', function(e) {
+    // Show processing modal
+    var processingModal = new bootstrap.Modal(document.getElementById('processingModal'));
+    processingModal.show();
+    
+    // Disable submit button
+    document.getElementById('predictBtn').disabled = true;
+    document.getElementById('predictBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+});
+
+// File validation
+csvFile.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            alert('Please select a CSV file only.');
+            e.target.value = '';
+            return;
+        }
+        
+        if (file.size > 50 * 1024 * 1024) { // 50MB limit
+            alert('File size must be less than 50MB.');
+            e.target.value = '';
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}

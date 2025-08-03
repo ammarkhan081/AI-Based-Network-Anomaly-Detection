@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-white rounded-3 shadow-sm p-4">
+                <h2 class="display-6 text-primary mb-3">
+                    <i class="fas fa-chart-line me-3"></i>Model Performance Dashboard
+                </h2>
+                <p class="lead text-muted">
+                    Comprehensive analysis of model performance including accuracy metrics, confusion matrix, and performance comparisons.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Accuracy</h6>
+                            <h3 class="mb-0" id="accuracy-value">{{ metrics.accuracy if metrics else '--' }}%</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-bullseye fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Precision</h6>
+                            <h3 class="mb-0" id="precision-value">{{ metrics.precision if metrics else '--' }}%</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-crosshairs fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Recall</h6>
+                            <h3 class="mb-0" id="recall-value">{{ metrics.recall if metrics else '--' }}%</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-search fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-white bg-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">F1-Score</h6>
+                            <h3 class="mb-0" id="f1-value">{{ metrics.f1_score if metrics else '--' }}%</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-balance-scale fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Performance Charts -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Performance Metrics Comparison
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="metricsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Confusion Matrix -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-th me-2"></i>Confusion Matrix
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="confusionMatrix" width="300" height="300"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="confusion-matrix-table">
+                                <h6 class="text-center mb-3">Confusion Matrix Values</h6>
+                                <table class="table table-bordered text-center">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Predicted Normal</th>
+                                            <th>Predicted Attack</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th>Actual Normal</th>
+                                            <td class="bg-success text-white" id="tn-value">{{ confusion_matrix[0][0] if confusion_matrix else '--' }}</td>
+                                            <td class="bg-danger text-white" id="fp-value">{{ confusion_matrix[0][1] if confusion_matrix else '--' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Actual Attack</th>
+                                            <td class="bg-warning text-dark" id="fn-value">{{ confusion_matrix[1][0] if confusion_matrix else '--' }}</td>
+                                            <td class="bg-info text-white" id="tp-value">{{ confusion_matrix[1][1] if confusion_matrix else '--' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Information & Status -->
+        <div class="col-lg-4">
+            <!-- Current Model Status -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-robot me-2"></i>Current Model Status
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="model-status">
+                        <div class="mb-3">
+                            <strong>Model Type:</strong>
+                            <span class="badge bg-primary ms-2" id="model-type">{{ current_model if current_model else 'Not Trained' }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Training Status:</strong>
+                            <span class="badge bg-success ms-2" id="training-status">
+                                {% if metrics %}Trained{% else %}Not Trained{% endif %}
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Last Training:</strong>
+                            <span class="text-muted" id="last-training">{{ last_training if last_training else 'Never' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Insights -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Performance Insights
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="performance-insights">
+                        {% if metrics %}
+                            <div class="insight-item mb-3">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                <small>
+                                    {% if metrics.accuracy > 90 %}
+                                        Excellent model performance with high accuracy.
+                                    {% elif metrics.accuracy > 80 %}
+                                        Good model performance, consider fine-tuning.
+                                    {% else %}
+                                        Model needs improvement, try different algorithms.
+                                    {% endif %}
+                                </small>
+                            </div>
+                            
+                            <div class="insight-item mb-3">
+                                <i class="fas fa-chart-line text-success me-2"></i>
+                                <small>
+                                    {% if metrics.precision > metrics.recall %}
+                                        High precision indicates fewer false positives.
+                                    {% else %}
+                                        High recall indicates better attack detection.
+                                    {% endif %}
+                                </small>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                                <p>No model performance data available.</p>
+                                <a href="/" class="btn btn-primary btn-sm">Train a Model</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-plus me-2"></i>Train New Model
+                        </a>
+                        <a href="/predict-page" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-brain me-2"></i>Make Predictions
+                        </a>
+                        <a href="/results" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-table me-2"></i>View Results
+                        </a>
+                        <button class="btn btn-outline-warning btn-sm" onclick="refreshMetrics()">
+                            <i class="fas fa-sync me-2"></i>Refresh Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Sample data - in a real application, this would come from the backend
+const metricsData = {
+    accuracy: {{ metrics.accuracy if metrics else 0 }},
+    precision: {{ metrics.precision if metrics else 0 }},
+    recall: {{ metrics.recall if metrics else 0 }},
+    f1_score: {{ metrics.f1_score if metrics else 0 }}
+};
+
+// Performance Metrics Chart
+const ctx = document.getElementById('metricsChart').getContext('2d');
+const metricsChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['Accuracy', 'Precision', 'Recall', 'F1-Score'],
+        datasets: [{
+            label: 'Performance Metrics (%)',
+            data: [metricsData.accuracy, metricsData.precision, metricsData.recall, metricsData.f1_score],
+            backgroundColor: [
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(23, 162, 184, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(220, 53, 69, 0.8)'
+            ],
+            borderColor: [
+                'rgba(40, 167, 69, 1)',
+                'rgba(23, 162, 184, 1)',
+                'rgba(255, 193, 7, 1)',
+                'rgba(220, 53, 69, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Confusion Matrix Visualization
+const confusionCtx = document.getElementById('confusionMatrix').getContext('2d');
+const confusionChart = new Chart(confusionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['True Positives', 'True Negatives', 'False Positives', 'False Negatives'],
+        datasets: [{
+            data: [
+                {{ confusion_matrix[1][1] if confusion_matrix else 0 }},
+                {{ confusion_matrix[0][0] if confusion_matrix else 0 }},
+                {{ confusion_matrix[0][1] if confusion_matrix else 0 }},
+                {{ confusion_matrix[1][0] if confusion_matrix else 0 }}
+            ],
+            backgroundColor: [
+                'rgba(23, 162, 184, 0.8)',
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(220, 53, 69, 0.8)',
+                'rgba(255, 193, 7, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+function refreshMetrics() {
+    // Refresh the page to get updated metrics
+    location.reload();
+}
+
+// Auto-refresh every 30 seconds if training is in progress
+{% if training_in_progress %}
+setTimeout(function() {
+    location.reload();
+}, 30000);
+{% endif %}
+</script>
+{% endblock %}
